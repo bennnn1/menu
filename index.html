@@ -50,28 +50,6 @@
     .meta-box.week-info { font-size: 1.4rem; font-weight: 800; color: #b71c1c; }
     .meta-box.cycle-info { font-size: 1.2rem; font-weight: 700; color: #2c3e50; }
 
-    /* FULLSCREEN NOTE OVERLAY */
-    #fullscreen-overlay {
-      display: none;
-      position: absolute;
-      top: 0.5rem;
-      left: 1rem;
-      width: calc(100vw - 2rem);
-      height: calc(100vh - 1.5rem - 8px);
-      background: #1a1a1a;
-      border-radius: 8px;
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    #fullscreen-overlay img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
     /* 8 COLUMNS x 5 ROWS TABLE GRID */
     .menu-table {
       width: 100%;
@@ -119,7 +97,7 @@
     .lunch-row { height: auto; }
     .dinner-row { height: auto; }
 
- /* CENTERED MEAL CELLS */
+    /* CENTERED MEAL CELLS */
     .meal-cell {
       font-size: 1.15rem;
       font-weight: 600;
@@ -127,20 +105,33 @@
       color: #111111;
       position: relative;
       white-space: pre-line;
-      text-align: center;         /* Centers text horizontally */
-      vertical-align: middle;     /* Centers vertically */
+      text-align: center;                 /* Centers text horizontally */
+      vertical-align: middle;             /* Centers text vertically in older layouts */
+      display: flex;                      
+      flex-direction: column;
+      align-items: center;                /* Centers flex items horizontally */
+      justify-content: center;            /* Centers content vertically */
+      height: 100%;
     }
 
     .breakfast-row .meal-cell {
       font-size: 1.05rem;
     }
 
-  /* HEART-HEALTHY EMOJI STYLING */
+    .holiday-gif {
+      display: block;
+      margin: 0 auto 2px auto;
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+
+    /* HEART-HEALTHY EMOJI STYLING */
     .heart-symbol {
       color: #e74c3c;
       font-weight: bold;
-      display: inline;
-      white-space: nowrap;
+      display: inline-block;
+      margin-left: 2px;
     }
 
     /* TODAY HIGHLIGHTING */
@@ -191,19 +182,14 @@
 <div class="screen-container">
 
   <!-- TOP METADATA BAR -->
-  <div class="header-bar" id="header-bar">
+  <div class="header-bar">
     <div class="meta-box date-range" id="date-display">Nov 1 – Nov 7</div>
     <div class="meta-box week-info" id="week-display">Loading...</div>
     <div class="meta-box cycle-info" id="cycle-display">Fall / Winter Menu</div>
   </div>
 
-  <!-- FULLSCREEN NOTE OVERLAY -->
-  <div id="fullscreen-overlay">
-    <img src="note.png" alt="Note">
-  </div>
-
   <!-- MENU TABLE GRID -->
-  <table class="menu-table" id="menu-table">
+  <table class="menu-table">
     <thead>
       <tr>
         <th style="width: 40px; background: transparent; border: none;"></th>
@@ -297,51 +283,53 @@
     return { current: currentWeek, next: nextWeek };
   }
 
-  // Bulletproof CSV Parser for Excel exports with quoted multi-line fields
+  // Robust CSV Parser that handles multi-line fields inside quotes
   function parseCSV(text) {
-    const rows = [];
-    let currentRow = [''];
-    let inQuotes = false;
-    
-    for (let i = 0; i < text.length; i++) {
-      let c = text[i];
-      let nextC = text[i + 1];
+    const lines = [];
+    let currentLine = '';
+    let inQuote = false;
 
-      if (c === '"') {
-        if (inQuotes && nextC === '"') {
-          currentRow[currentRow.length - 1] += '"';
-          i++; // Skip escaped quote
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (c === ',' && !inQuotes) {
-        currentRow.push('');
-      } else if ((c === '\r' && nextC === '\n') || (c === '\n' && !inQuotes)) {
-        if (c === '\r') i++; // Handle \r\n
-        rows.push(currentRow);
-        currentRow = [''];
+    for (let i = 0; i < text.length; i++) {
+      let char = text[i];
+      if (char === '"') {
+        inQuote = !inQuote;
+        currentLine += char;
+      } else if ((char === '\n' || char === '\r') && !inQuote) {
+        if (currentLine.trim() !== '') lines.push(currentLine);
+        currentLine = '';
       } else {
-        currentRow[currentRow.length - 1] += c;
+        currentLine += char;
       }
     }
-    if (currentRow.length > 1 || currentRow[0] !== '') {
-      rows.push(currentRow);
-    }
+    if (currentLine.trim() !== '') lines.push(currentLine);
 
-    if (rows.length === 0) return [];
-
-    const headers = rows[0].map(h => h.trim().replace(/^\uFEFF/, '')); // Strip BOM if present
+    const headers = lines[0].split(',').map(h => h.trim());
     
-    return rows.slice(1).map(row => {
+    return lines.slice(1).map(line => {
+      const values = [];
+      let inQuoteVal = false;
+      let currentValue = '';
+      
+      for (let i = 0; i < line.length; i++) {
+        let char = line[i];
+        if (char === '"') {
+          inQuoteVal = !inQuoteVal;
+        } else if (char === ',' && !inQuoteVal) {
+          values.push(currentValue.trim().replace(/^"|"$/g, ''));
+          currentValue = '';
+        } else {
+          currentValue += char;
+        }
+      }
+      values.push(currentValue.trim().replace(/^"|"$/g, ''));
+
       let obj = {};
-      headers.forEach((header, index) => {
-        obj[header] = (row[index] !== undefined) ? row[index].trim().replace(/^"|"$/g, '') : '';
-      });
+      headers.forEach((h, i) => obj[h] = values[i] || '');
       return obj;
     });
   }
 
-// Fetch and Load CSV Data into Cells with flexible matching
+  // Fetch and Load CSV Data into Cells
   async function loadMenuData(targetWeek, labelType) {
     try {
       const response = await fetch('menu.csv?' + new Date().getTime());
@@ -350,33 +338,23 @@
       const csvText = await response.text();
       const menuItems = parseCSV(csvText);
 
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const meals = ['Breakfast', 'Lunch', 'Dinner'];
+      const weekItems = menuItems.filter(item => parseInt(item.Week) === targetWeek);
 
-      days.forEach(day => {
-        meals.forEach(meal => {
-          const cellId = `cell-${day}-${meal}`;
-          const cell = document.getElementById(cellId);
-          if (cell) {
-            // Flexible match: checks week and matches day/meal regardless of full spelling or case
-            const matchedRow = menuItems.find(item => {
-              if (parseInt(item.Week) !== targetWeek) return false;
-              
-              const csvDay = (item.Day || '').trim().substring(0, 3).toLowerCase();
-              const csvMeal = (item.Meal || '').trim().toLowerCase();
-              
-              return csvDay === day.toLowerCase() && csvMeal === meal.toLowerCase();
-            });
-
-            if (matchedRow && matchedRow.Item) {
-              // Keeps heart inline right next to the menu text
-              let formattedItem = matchedRow.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">&nbsp;♥</span>');
-              cell.innerHTML = formattedItem;
-            } else {
-              cell.innerHTML = '';
-            }
+      weekItems.forEach(row => {
+        const cellId = `cell-${row.Day}-${row.Meal}`;
+        const cell = document.getElementById(cellId);
+        if (cell) {
+          let content = '';
+          
+          if (row.HolidayGif) {
+            content += `<img src="${row.HolidayGif}" class="holiday-gif" alt="Icon" onerror="this.style.display='none'">`;
           }
-        });
+          
+          let formattedItem = row.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">♥</span>');
+          
+          content += formattedItem;
+          cell.innerHTML = content;
+        }
       });
       
       const labelText = labelType === 'current' ? 'Current Week' : 'Next Week Preview';
@@ -413,44 +391,22 @@
     bar.style.width = '0%';
   }
 
-  // Automated 3-Step Rotation Loop (Current Week -> Next Week -> Note.png)
+  // Automated Rotation Loop based on Calendar Math
   function startRotationLoop() {
     const weeks = getActiveCycleWeeks();
     const currentWeekDuration = 45000; // 45s
     const nextWeekDuration = 15000;    // 15s
-    const noteDuration = 15000;        // 15s
-
-    const overlay = document.getElementById('fullscreen-overlay');
-    const tableEl = document.getElementById('menu-table');
-    const headerBar = document.getElementById('header-bar');
 
     function showCurrent() {
-      overlay.style.display = 'none';
-      tableEl.style.display = 'table';
-      headerBar.style.display = 'grid';
-
       loadMenuData(weeks.current, 'current');
       animateProgressBar(currentWeekDuration);
       setTimeout(showNext, currentWeekDuration);
     }
 
     function showNext() {
-      overlay.style.display = 'none';
-      tableEl.style.display = 'table';
-      headerBar.style.display = 'grid';
-
       loadMenuData(weeks.next, 'next');
       animateProgressBar(nextWeekDuration);
-      setTimeout(showNote, nextWeekDuration);
-    }
-
-    function showNote() {
-      tableEl.style.display = 'none';
-      headerBar.style.display = 'none';
-      overlay.style.display = 'flex';
-
-      animateProgressBar(noteDuration);
-      setTimeout(showCurrent, noteDuration);
+      setTimeout(showCurrent, nextWeekDuration);
     }
 
     showCurrent();
