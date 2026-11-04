@@ -46,9 +46,9 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.15);
     }
 
-    .meta-box.date-range { font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
-    .meta-box.week-info { font-size: 1.5rem; font-weight: 800; color: #b71c1c; }
-    .meta-box.cycle-info { font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
+    .meta-box.date-range { font-size: 1.2rem; font-weight: 700; color: #2c3e50; }
+    .meta-box.week-info { font-size: 1.4rem; font-weight: 800; color: #b71c1c; }
+    .meta-box.cycle-info { font-size: 1.2rem; font-weight: 700; color: #2c3e50; }
 
     /* 8 COLUMNS x 5 ROWS TABLE GRID */
     .menu-table {
@@ -63,48 +63,52 @@
       background: rgba(255, 255, 255, 0.96);
       border: 2px solid #cccccc;
       border-radius: 6px;
-      padding: 0.4rem;
+      padding: 0.35rem 0.4rem;
       vertical-align: top;
       overflow: hidden;
     }
 
     /* DAY HEADERS */
     .day-header {
-      height: 38px;
+      height: 36px;
       text-align: center;
       font-weight: 800;
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       background: #2c3e50 !important;
       color: #ffffff;
-      line-height: 24px;
+      line-height: 22px;
     }
 
-    /* SIDEWAYS MEAL HEADERS */
+    /* SIDEWAYS MEAL HEADERS (Smaller font to fit tight rows) */
     .meal-header {
-      width: 45px;
+      width: 40px;
       text-align: center;
       background: #34495e !important;
       color: #ffffff;
       font-weight: 800;
-      font-size: 1.3rem;
-      letter-spacing: 2px;
+      font-size: 1.05rem;
+      letter-spacing: 1px;
       writing-mode: vertical-rl;
       transform: rotate(180deg);
       white-space: nowrap;
     }
 
-    /* BREAKFAST ROW */
-    .breakfast-row { height: 14%; }
+    /* TIGHT ROW HEIGHTS (Auto-fits tallest cell, no blank space) */
+    .breakfast-row { height: auto; }
+    .lunch-row { height: auto; }
+    .dinner-row { height: auto; }
+
+    /* BREAKFAST ROW FONT */
     .breakfast-row .meal-cell {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 600;
       line-height: 1.15;
-      white-space: pre-line; /* Stacks items vertically */
+      white-space: pre-line;
     }
 
-    /* LUNCH & DINNER ROWS */
+    /* LUNCH & DINNER ROWS FONT (Slightly smaller for elderly readability without overflowing) */
     .meal-cell {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 600;
       line-height: 1.2;
       color: #111111;
@@ -114,8 +118,8 @@
 
     .holiday-gif {
       float: right;
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       margin-left: 4px;
       object-fit: contain;
     }
@@ -142,13 +146,13 @@
 
     /* BOTTOM ROW NOTES */
     .notes-cell {
-      height: 48px;
-      font-size: 8pt;
+      height: 44px;
+      font-size: 7.5pt;
       line-height: 1.15;
       background: rgba(236, 240, 241, 0.98) !important;
       color: #222222;
       font-weight: 500;
-      padding: 0.25rem 0.4rem;
+      padding: 0.2rem 0.35rem;
       display: table-cell;
       vertical-align: middle;
     }
@@ -186,7 +190,7 @@
   <table class="menu-table">
     <thead>
       <tr>
-        <th style="width: 45px; background: transparent; border: none;"></th>
+        <th style="width: 40px; background: transparent; border: none;"></th>
         <th class="day-header" id="col-Sun">Sunday</th>
         <th class="day-header" id="col-Mon">Monday</th>
         <th class="day-header" id="col-Tue">Tuesday</th>
@@ -210,7 +214,7 @@
       </tr>
 
       <!-- LUNCH ROW -->
-      <tr>
+      <tr class="lunch-row">
         <td class="meal-header">LUNCH</td>
         <td class="meal-cell" id="cell-Sun-Lunch">Loading...</td>
         <td class="meal-cell" id="cell-Mon-Lunch">Loading...</td>
@@ -222,14 +226,12 @@
       </tr>
 
       <!-- DINNER ROW -->
-      <tr>
+      <tr class="dinner-row">
         <td class="meal-header">DINNER</td>
         <td class="meal-cell" id="cell-Sun-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Mon-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Tue-Dinner">Loading...</td>
-        <td class="meal-cell" id="cell-Sat-Dinner">Loading...</td>
-        <td class="meal-cell" id="cell-Thu-Dinner">Loading...</td>
-        <td class="meal-cell" id="cell-Fri-Dinner">Loading...</td>
+        <td class="meal-cell" id="cell-Wed-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Sat-Dinner">Loading...</td>
       </tr>
 
@@ -277,21 +279,39 @@
     return { current: currentWeek, next: nextWeek };
   }
 
-  // Robust CSV Parser preserving line breaks within quotes
+  // Robust CSV Parser that handles multi-line fields inside quotes
   function parseCSV(text) {
-    const lines = text.trim().split(/\r?\n/);
+    const lines = [];
+    let currentLine = '';
+    let inQuote = false;
+
+    // Correctly split lines while respecting quoted newlines
+    for (let i = 0; i < text.length; i++) {
+      let char = text[i];
+      if (char === '"') {
+        inQuote = !inQuote;
+        currentLine += char;
+      } else if ((char === '\n' || char === '\r') && !inQuote) {
+        if (currentLine.trim() !== '') lines.push(currentLine);
+        currentLine = '';
+      } else {
+        currentLine += char;
+      }
+    }
+    if (currentLine.trim() !== '') lines.push(currentLine);
+
     const headers = lines[0].split(',').map(h => h.trim());
     
     return lines.slice(1).map(line => {
       const values = [];
-      let inQuote = false;
+      let inQuoteVal = false;
       let currentValue = '';
       
       for (let i = 0; i < line.length; i++) {
         let char = line[i];
         if (char === '"') {
-          inQuote = !inQuote;
-        } else if (char === ',' && !inQuote) {
+          inQuoteVal = !inQuoteVal;
+        } else if (char === ',' && !inQuoteVal) {
           values.push(currentValue.trim().replace(/^"|"$/g, ''));
           currentValue = '';
         } else {
@@ -322,8 +342,10 @@
         const cell = document.getElementById(cellId);
         if (cell) {
           let content = '';
+          
+          // Support for HolidayGif or Note icon (`note.png`)
           if (row.HolidayGif) {
-            content += `<img src="${row.HolidayGif}" class="holiday-gif" alt="Holiday" onerror="this.style.display='none'">`;
+            content += `<img src="${row.HolidayGif}" class="holiday-gif" alt="Icon" onerror="this.style.display='none'">`;
           }
           
           let formattedItem = row.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">♥</span>');
