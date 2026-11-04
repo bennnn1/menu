@@ -140,12 +140,12 @@
       font-size: 1.05rem;
     }
 
-    /* HEART-HEALTHY EMOJI STYLING */
+  /* HEART-HEALTHY EMOJI STYLING */
     .heart-symbol {
       color: #e74c3c;
       font-weight: bold;
-      display: inline-block;
-      margin-left: 2px;
+      display: inline;
+      white-space: nowrap;
     }
 
     /* TODAY HIGHLIGHTING */
@@ -355,15 +355,31 @@
       const csvText = await response.text();
       const menuItems = parseCSV(csvText);
 
-      const weekItems = menuItems.filter(item => parseInt(item.Week) === targetWeek);
+      // Define our days and meals to cleanly loop and clear/populate cells
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const meals = ['Breakfast', 'Lunch', 'Dinner'];
 
-      weekItems.forEach(row => {
-        const cellId = `cell-${row.Day}-${row.Meal}`;
-        const cell = document.getElementById(cellId);
-        if (cell) {
-          let formattedItem = row.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">♥</span>');
-          cell.innerHTML = formattedItem;
-        }
+      days.forEach(day => {
+        meals.forEach(meal => {
+          const cellId = `cell-${day}-${meal}`;
+          const cell = document.getElementById(cellId);
+          if (cell) {
+            // Find the exact matching row for this specific Week, Day, and Meal
+            const matchedRow = menuItems.find(item => 
+              parseInt(item.Week) === targetWeek && 
+              item.Day === day && 
+              item.Meal === meal
+            );
+
+            if (matchedRow && matchedRow.Item) {
+              // Keep heart symbols inline using a non-breaking space & span
+              let formattedItem = matchedRow.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">&nbsp;♥</span>');
+              cell.innerHTML = formattedItem;
+            } else {
+              cell.innerHTML = '';
+            }
+          }
+        });
       });
       
       const labelText = labelType === 'current' ? 'Current Week' : 'Next Week Preview';
