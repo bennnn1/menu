@@ -20,7 +20,7 @@
     .screen-container {
       width: 100vw;
       height: 100vh;
-      padding: 1rem 1.25rem;
+      padding: 0.5rem 1rem;
       background: #f4f4f9 url('background.jpg') no-repeat center center / cover;
       display: flex;
       flex-direction: column;
@@ -34,26 +34,26 @@
       grid-template-columns: 1fr 1.5fr 1fr;
       gap: 1rem;
       align-items: center;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.3rem;
     }
 
     .meta-box {
       background: rgba(255, 255, 255, 0.95);
       border: 3px solid #2c3e50;
       border-radius: 8px;
-      padding: 0.4rem 0.8rem;
+      padding: 0.3rem 0.8rem;
       text-align: center;
       box-shadow: 0 4px 6px rgba(0,0,0,0.15);
     }
 
-    .meta-box.date-range { font-size: 1.4rem; font-weight: 700; color: #2c3e50; }
-    .meta-box.week-info { font-size: 1.7rem; font-weight: 800; color: #b71c1c; }
-    .meta-box.cycle-info { font-size: 1.4rem; font-weight: 700; color: #2c3e50; }
+    .meta-box.date-range { font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
+    .meta-box.week-info { font-size: 1.5rem; font-weight: 800; color: #b71c1c; }
+    .meta-box.cycle-info { font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
 
     /* 8 COLUMNS x 5 ROWS TABLE GRID */
     .menu-table {
       width: 100%;
-      height: calc(100vh - 95px);
+      flex-grow: 1;
       border-collapse: separate;
       border-spacing: 4px;
       table-layout: fixed;
@@ -63,30 +63,30 @@
       background: rgba(255, 255, 255, 0.96);
       border: 2px solid #cccccc;
       border-radius: 6px;
-      padding: 0.5rem;
+      padding: 0.4rem;
       vertical-align: top;
       overflow: hidden;
     }
 
     /* DAY HEADERS */
     .day-header {
-      height: 42px;
+      height: 38px;
       text-align: center;
       font-weight: 800;
-      font-size: 1.35rem;
+      font-size: 1.25rem;
       background: #2c3e50 !important;
       color: #ffffff;
-      line-height: 28px;
+      line-height: 24px;
     }
 
     /* SIDEWAYS MEAL HEADERS */
     .meal-header {
-      width: 50px;
+      width: 45px;
       text-align: center;
       background: #34495e !important;
       color: #ffffff;
       font-weight: 800;
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       letter-spacing: 2px;
       writing-mode: vertical-rl;
       transform: rotate(180deg);
@@ -94,27 +94,28 @@
     }
 
     /* BREAKFAST ROW */
-    .breakfast-row { height: 15%; }
+    .breakfast-row { height: 14%; }
     .breakfast-row .meal-cell {
-      padding: 0.35rem 0.45rem;
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 600;
-      line-height: 1.2;
+      line-height: 1.15;
+      white-space: pre-line; /* Stacks items vertically */
     }
 
     /* LUNCH & DINNER ROWS */
     .meal-cell {
-      font-size: 1.35rem;
+      font-size: 1.25rem;
       font-weight: 600;
-      line-height: 1.25;
+      line-height: 1.2;
       color: #111111;
       position: relative;
+      white-space: pre-line; /* Stacks items vertically */
     }
 
     .holiday-gif {
       float: right;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       margin-left: 4px;
       object-fit: contain;
     }
@@ -141,13 +142,13 @@
 
     /* BOTTOM ROW NOTES */
     .notes-cell {
-      height: 54px;
-      font-size: 8.5pt;
-      line-height: 1.2;
+      height: 48px;
+      font-size: 8pt;
+      line-height: 1.15;
       background: rgba(236, 240, 241, 0.98) !important;
       color: #222222;
       font-weight: 500;
-      padding: 0.3rem 0.5rem;
+      padding: 0.25rem 0.4rem;
       display: table-cell;
       vertical-align: middle;
     }
@@ -158,7 +159,7 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 8px;
+      height: 6px;
       background: rgba(0, 0, 0, 0.3);
     }
 
@@ -185,7 +186,7 @@
   <table class="menu-table">
     <thead>
       <tr>
-        <th style="width: 50px; background: transparent; border: none;"></th>
+        <th style="width: 45px; background: transparent; border: none;"></th>
         <th class="day-header" id="col-Sun">Sunday</th>
         <th class="day-header" id="col-Mon">Monday</th>
         <th class="day-header" id="col-Tue">Tuesday</th>
@@ -226,7 +227,7 @@
         <td class="meal-cell" id="cell-Sun-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Mon-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Tue-Dinner">Loading...</td>
-        <td class="meal-cell" id="cell-Wed-Dinner">Loading...</td>
+        <td class="meal-cell" id="cell-Sat-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Thu-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Fri-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Sat-Dinner">Loading...</td>
@@ -276,7 +277,7 @@
     return { current: currentWeek, next: nextWeek };
   }
 
-// Robust CSV Parser that handles Excel quoted fields containing commas
+  // Robust CSV Parser preserving line breaks within quotes
   function parseCSV(text) {
     const lines = text.trim().split(/\r?\n/);
     const headers = lines[0].split(',').map(h => h.trim());
@@ -289,7 +290,7 @@
       for (let i = 0; i < line.length; i++) {
         let char = line[i];
         if (char === '"') {
-          inQuote = !inQuote; // Toggle quote state
+          inQuote = !inQuote;
         } else if (char === ',' && !inQuote) {
           values.push(currentValue.trim().replace(/^"|"$/g, ''));
           currentValue = '';
@@ -321,12 +322,13 @@
         const cell = document.getElementById(cellId);
         if (cell) {
           let content = '';
-        if (row.HolidayGif) {
-          content += `<img src="${row.HolidayGif}" class="holiday-gif" alt="Holiday" onerror="this.style.display='none'">`;
-        }
-        
-        let formattedItem = row.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">♥</span>');
-        content += formattedItem;
+          if (row.HolidayGif) {
+            content += `<img src="${row.HolidayGif}" class="holiday-gif" alt="Holiday" onerror="this.style.display='none'">`;
+          }
+          
+          let formattedItem = row.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">♥</span>');
+          
+          content += formattedItem;
           cell.innerHTML = content;
         }
       });
