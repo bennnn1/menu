@@ -50,6 +50,28 @@
     .meta-box.week-info { font-size: 1.4rem; font-weight: 800; color: #b71c1c; }
     .meta-box.cycle-info { font-size: 1.2rem; font-weight: 700; color: #2c3e50; }
 
+    /* FULLSCREEN NOTE OVERLAY */
+    #fullscreen-overlay {
+      display: none;
+      position: absolute;
+      top: 0.5rem;
+      left: 1rem;
+      width: calc(100vw - 2rem);
+      height: calc(100vh - 1.5rem - 8px);
+      background: #1a1a1a;
+      border-radius: 8px;
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    #fullscreen-overlay img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
     /* 8 COLUMNS x 5 ROWS TABLE GRID */
     .menu-table {
       width: 100%;
@@ -64,7 +86,6 @@
       border: 2px solid #cccccc;
       border-radius: 6px;
       padding: 0.35rem 0.4rem;
-      vertical-align: top;
       overflow: hidden;
     }
 
@@ -79,7 +100,7 @@
       line-height: 22px;
     }
 
-    /* SIDEWAYS MEAL HEADERS (Smaller font to fit tight rows) */
+    /* SIDEWAYS MEAL HEADERS */
     .meal-header {
       width: 40px;
       text-align: center;
@@ -93,35 +114,30 @@
       white-space: nowrap;
     }
 
-    /* TIGHT ROW HEIGHTS (Auto-fits tallest cell, no blank space) */
+    /* ROW HEIGHTS */
     .breakfast-row { height: auto; }
     .lunch-row { height: auto; }
     .dinner-row { height: auto; }
 
-    /* BREAKFAST ROW FONT */
-    .breakfast-row .meal-cell {
-      font-size: 1.05rem;
-      font-weight: 600;
-      line-height: 1.15;
-      white-space: pre-line;
-    }
-
-    /* LUNCH & DINNER ROWS FONT (Slightly smaller for elderly readability without overflowing) */
+    /* CENTERED MEAL CELLS */
     .meal-cell {
       font-size: 1.15rem;
       font-weight: 600;
       line-height: 1.2;
       color: #111111;
       position: relative;
-      white-space: pre-line; /* Stacks items vertically */
+      white-space: pre-line;
+      text-align: center;
+      vertical-align: middle;
+      display: flex;                      
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
     }
 
-    .holiday-gif {
-      float: right;
-      width: 28px;
-      height: 28px;
-      margin-left: 4px;
-      object-fit: contain;
+    .breakfast-row .meal-cell {
+      font-size: 1.05rem;
     }
 
     /* HEART-HEALTHY EMOJI STYLING */
@@ -180,14 +196,19 @@
 <div class="screen-container">
 
   <!-- TOP METADATA BAR -->
-  <div class="header-bar">
+  <div class="header-bar" id="header-bar">
     <div class="meta-box date-range" id="date-display">Nov 1 – Nov 7</div>
     <div class="meta-box week-info" id="week-display">Loading...</div>
     <div class="meta-box cycle-info" id="cycle-display">Fall / Winter Menu</div>
   </div>
 
+  <!-- FULLSCREEN NOTE OVERLAY -->
+  <div id="fullscreen-overlay">
+    <img src="note.png" alt="Note">
+  </div>
+
   <!-- MENU TABLE GRID -->
-  <table class="menu-table">
+  <table class="menu-table" id="menu-table">
     <thead>
       <tr>
         <th style="width: 40px; background: transparent; border: none;"></th>
@@ -232,6 +253,8 @@
         <td class="meal-cell" id="cell-Mon-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Tue-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Wed-Dinner">Loading...</td>
+        <td class="meal-cell" id="cell-Thu-Dinner">Loading...</td>
+        <td class="meal-cell" id="cell-Fri-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Sat-Dinner">Loading...</td>
       </tr>
 
@@ -285,7 +308,6 @@
     let currentLine = '';
     let inQuote = false;
 
-    // Correctly split lines while respecting quoted newlines
     for (let i = 0; i < text.length; i++) {
       let char = text[i];
       if (char === '"') {
@@ -341,17 +363,8 @@
         const cellId = `cell-${row.Day}-${row.Meal}`;
         const cell = document.getElementById(cellId);
         if (cell) {
-          let content = '';
-          
-          // Support for HolidayGif or Note icon (`note.png`)
-          if (row.HolidayGif) {
-            content += `<img src="${row.HolidayGif}" class="holiday-gif" alt="Icon" onerror="this.style.display='none'">`;
-          }
-          
           let formattedItem = row.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">♥</span>');
-          
-          content += formattedItem;
-          cell.innerHTML = content;
+          cell.innerHTML = formattedItem;
         }
       });
       
@@ -389,22 +402,44 @@
     bar.style.width = '0%';
   }
 
-  // Automated Rotation Loop based on Calendar Math
+  // Automated 3-Step Rotation Loop (Current Week -> Next Week -> Note.png)
   function startRotationLoop() {
     const weeks = getActiveCycleWeeks();
     const currentWeekDuration = 45000; // 45s
     const nextWeekDuration = 15000;    // 15s
+    const noteDuration = 15000;        // 15s
+
+    const overlay = document.getElementById('fullscreen-overlay');
+    const tableEl = document.getElementById('menu-table');
+    const headerBar = document.getElementById('header-bar');
 
     function showCurrent() {
+      overlay.style.display = 'none';
+      tableEl.style.display = 'table';
+      headerBar.style.display = 'grid';
+
       loadMenuData(weeks.current, 'current');
       animateProgressBar(currentWeekDuration);
       setTimeout(showNext, currentWeekDuration);
     }
 
     function showNext() {
+      overlay.style.display = 'none';
+      tableEl.style.display = 'table';
+      headerBar.style.display = 'grid';
+
       loadMenuData(weeks.next, 'next');
       animateProgressBar(nextWeekDuration);
-      setTimeout(showCurrent, nextWeekDuration);
+      setTimeout(showNote, nextWeekDuration);
+    }
+
+    function showNote() {
+      tableEl.style.display = 'none';
+      headerBar.style.display = 'none';
+      overlay.style.display = 'flex';
+
+      animateProgressBar(noteDuration);
+      setTimeout(showCurrent, noteDuration);
     }
 
     showCurrent();
