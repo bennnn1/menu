@@ -24,7 +24,7 @@
       width: 100%;
       height: 100%;
       padding: 0.5rem 1rem;
-      background: #f4f4f9 url('background.png') no-repeat center center / cover;
+      background: #f4f4f9 url('background.jpg') no-repeat center center / cover;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -97,7 +97,7 @@
     /* MENU CELLS: items centered, one per line */
     .meal-cell {
       font-size: var(--fs);
-      font-weight: 600;
+      font-weight: 500;
       line-height: 1.2;
       color: #111111;
       text-align: center;
@@ -194,8 +194,9 @@
 
 <script>
   // ---------------- SETTINGS ----------------
-  const MENU_SECONDS = 45;   // how long the menu stays on screen
-  const NOTE_SECONDS = 15;   // how long note.png stays on screen
+  const MENU_SECONDS = 45;   // current week on screen
+  const NEXT_SECONDS = 15;   // following week on screen
+  const NOTE_SECONDS = 15;   // note.png on screen
   const CYCLE_ANCHOR = '2026-01-04'; // a Sunday that is the start of Week 1
   const CYCLE_LENGTH = 4;    // number of weeks in the rotation
 
@@ -239,9 +240,9 @@
     return (((diffWeeks % CYCLE_LENGTH) + CYCLE_LENGTH) % CYCLE_LENGTH) + 1;
   }
 
-  function showDateRange() {
+  function showDateRange(weekOffset = 0) {
     const today = startOfDay(new Date());
-    const sunday = new Date(today); sunday.setDate(today.getDate() - today.getDay());
+    const sunday = new Date(today); sunday.setDate(today.getDate() - today.getDay() + weekOffset * 7);
     const saturday = new Date(sunday); saturday.setDate(sunday.getDate() + 6);
     const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     document.getElementById('date-display').textContent = `${fmt(sunday)} \u2013 ${fmt(saturday)}`;
@@ -306,7 +307,7 @@
     return div;
   }
 
-  async function loadMenu(week) {
+  async function loadMenu(week, label) {
     // clear all cells first so nothing stale remains
     document.querySelectorAll('.meal-cell').forEach(c => c.innerHTML = '');
 
@@ -337,7 +338,7 @@
       console.error('Error loading menu.csv:', err);
     }
 
-    document.getElementById('week-display').textContent = `Week ${week}`;
+    document.getElementById('week-display').textContent = `Week ${week} - ${label}`;
   }
 
   // ---------------- HIGHLIGHT TODAY ----------------
@@ -390,17 +391,25 @@
     bar.style.width = '0%';
   }
 
+  async function showWeek(week, label, weekOffset, seconds, highlight) {
+    showDateRange(weekOffset);
+    await loadMenu(week, label);   // reloads CSV every time, so edits on GitHub show up
+    if (highlight) highlightToday();
+    else document.querySelectorAll('.is-today').forEach(el => el.classList.remove('is-today'));
+    fitToScreen();
+    noteScreen.style.display = 'none';
+    animateProgressBar(seconds * 1000);
+    await wait(seconds * 1000);
+  }
+
   async function runForever() {
     buildTable();
     while (true) {
-      showDateRange();
-      await loadMenu(getCurrentWeek());   // reloads CSV every cycle, so edits on GitHub show up
-      highlightToday();
-      fitToScreen();
+      const current = getCurrentWeek();
+      const next = (current % CYCLE_LENGTH) + 1;
 
-      noteScreen.style.display = 'none';
-      animateProgressBar(MENU_SECONDS * 1000);
-      await wait(MENU_SECONDS * 1000);
+      await showWeek(current, 'Current Week', 0, MENU_SECONDS, true);
+      await showWeek(next, 'Next Week', 1, NEXT_SECONDS, false);
 
       if (!noteBroken) {
         noteScreen.style.display = 'block';
