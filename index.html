@@ -64,7 +64,6 @@
       border: 2px solid #cccccc;
       border-radius: 6px;
       padding: 0.35rem 0.4rem;
-      vertical-align: top;
       overflow: hidden;
     }
 
@@ -79,7 +78,7 @@
       line-height: 22px;
     }
 
-    /* SIDEWAYS MEAL HEADERS (Smaller font to fit tight rows) */
+    /* SIDEWAYS MEAL HEADERS */
     .meal-header {
       width: 40px;
       text-align: center;
@@ -93,34 +92,37 @@
       white-space: nowrap;
     }
 
-    /* TIGHT ROW HEIGHTS (Auto-fits tallest cell, no blank space) */
+    /* ROW HEIGHTS */
     .breakfast-row { height: auto; }
     .lunch-row { height: auto; }
     .dinner-row { height: auto; }
 
-    /* BREAKFAST ROW FONT */
-    .breakfast-row .meal-cell {
-      font-size: 1.05rem;
-      font-weight: 600;
-      line-height: 1.15;
-      white-space: pre-line;
-    }
-
-    /* LUNCH & DINNER ROWS FONT (Slightly smaller for elderly readability without overflowing) */
+    /* CENTERED MEAL CELLS */
     .meal-cell {
       font-size: 1.15rem;
       font-weight: 600;
       line-height: 1.2;
       color: #111111;
       position: relative;
-      white-space: pre-line; /* Stacks items vertically */
+      white-space: pre-line;
+      text-align: center;                 /* Centers text horizontally */
+      vertical-align: middle;             /* Centers text vertically in older layouts */
+      display: flex;                      
+      flex-direction: column;
+      align-items: center;                /* Centers flex items horizontally */
+      justify-content: center;            /* Centers content vertically */
+      height: 100%;
+    }
+
+    .breakfast-row .meal-cell {
+      font-size: 1.05rem;
     }
 
     .holiday-gif {
-      float: right;
+      display: block;
+      margin: 0 auto 2px auto;
       width: 28px;
       height: 28px;
-      margin-left: 4px;
       object-fit: contain;
     }
 
@@ -232,6 +234,8 @@
         <td class="meal-cell" id="cell-Mon-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Tue-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Wed-Dinner">Loading...</td>
+        <td class="meal-cell" id="cell-Thu-Dinner">Loading...</td>
+        <td class="meal-cell" id="cell-Fri-Dinner">Loading...</td>
         <td class="meal-cell" id="cell-Sat-Dinner">Loading...</td>
       </tr>
 
@@ -285,7 +289,6 @@
     let currentLine = '';
     let inQuote = false;
 
-    // Correctly split lines while respecting quoted newlines
     for (let i = 0; i < text.length; i++) {
       let char = text[i];
       if (char === '"') {
@@ -343,7 +346,6 @@
         if (cell) {
           let content = '';
           
-          // Support for HolidayGif or Note icon (`note.png`)
           if (row.HolidayGif) {
             content += `<img src="${row.HolidayGif}" class="holiday-gif" alt="Icon" onerror="this.style.display='none'">`;
           }
