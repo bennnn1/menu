@@ -119,7 +119,7 @@
     .lunch-row { height: auto; }
     .dinner-row { height: auto; }
 
-    /* CENTERED MEAL CELLS */
+ /* CENTERED MEAL CELLS */
     .meal-cell {
       font-size: 1.15rem;
       font-weight: 600;
@@ -127,13 +127,8 @@
       color: #111111;
       position: relative;
       white-space: pre-line;
-      text-align: center;
-      vertical-align: middle;
-      display: flex;                      
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
+      text-align: center;         /* Centers text horizontally */
+      vertical-align: middle;     /* Centers vertically */
     }
 
     .breakfast-row .meal-cell {
@@ -346,7 +341,7 @@
     });
   }
 
-  // Fetch and Load CSV Data into Cells
+// Fetch and Load CSV Data into Cells with flexible matching
   async function loadMenuData(targetWeek, labelType) {
     try {
       const response = await fetch('menu.csv?' + new Date().getTime());
@@ -355,7 +350,6 @@
       const csvText = await response.text();
       const menuItems = parseCSV(csvText);
 
-      // Define our days and meals to cleanly loop and clear/populate cells
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const meals = ['Breakfast', 'Lunch', 'Dinner'];
 
@@ -364,15 +358,18 @@
           const cellId = `cell-${day}-${meal}`;
           const cell = document.getElementById(cellId);
           if (cell) {
-            // Find the exact matching row for this specific Week, Day, and Meal
-            const matchedRow = menuItems.find(item => 
-              parseInt(item.Week) === targetWeek && 
-              item.Day === day && 
-              item.Meal === meal
-            );
+            // Flexible match: checks week and matches day/meal regardless of full spelling or case
+            const matchedRow = menuItems.find(item => {
+              if (parseInt(item.Week) !== targetWeek) return false;
+              
+              const csvDay = (item.Day || '').trim().substring(0, 3).toLowerCase();
+              const csvMeal = (item.Meal || '').trim().toLowerCase();
+              
+              return csvDay === day.toLowerCase() && csvMeal === meal.toLowerCase();
+            });
 
             if (matchedRow && matchedRow.Item) {
-              // Keep heart symbols inline using a non-breaking space & span
+              // Keeps heart inline right next to the menu text
               let formattedItem = matchedRow.Item.replace(/[♥❤️]/g, '<span class="heart-symbol">&nbsp;♥</span>');
               cell.innerHTML = formattedItem;
             } else {
