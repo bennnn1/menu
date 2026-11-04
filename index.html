@@ -302,48 +302,46 @@
     return { current: currentWeek, next: nextWeek };
   }
 
-  // Robust CSV Parser that handles multi-line fields inside quotes
+  // Bulletproof CSV Parser for Excel exports with quoted multi-line fields
   function parseCSV(text) {
-    const lines = [];
-    let currentLine = '';
-    let inQuote = false;
-
+    const rows = [];
+    let currentRow = [''];
+    let inQuotes = false;
+    
     for (let i = 0; i < text.length; i++) {
-      let char = text[i];
-      if (char === '"') {
-        inQuote = !inQuote;
-        currentLine += char;
-      } else if ((char === '\n' || char === '\r') && !inQuote) {
-        if (currentLine.trim() !== '') lines.push(currentLine);
-        currentLine = '';
+      let c = text[i];
+      let nextC = text[i + 1];
+
+      if (c === '"') {
+        if (inQuotes && nextC === '"') {
+          currentRow[currentRow.length - 1] += '"';
+          i++; // Skip escaped quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (c === ',' && !inQuotes) {
+        currentRow.push('');
+      } else if ((c === '\r' && nextC === '\n') || (c === '\n' && !inQuotes)) {
+        if (c === '\r') i++; // Handle \r\n
+        rows.push(currentRow);
+        currentRow = [''];
       } else {
-        currentLine += char;
+        currentRow[currentRow.length - 1] += c;
       }
     }
-    if (currentLine.trim() !== '') lines.push(currentLine);
+    if (currentRow.length > 1 || currentRow[0] !== '') {
+      rows.push(currentRow);
+    }
 
-    const headers = lines[0].split(',').map(h => h.trim());
+    if (rows.length === 0) return [];
+
+    const headers = rows[0].map(h => h.trim().replace(/^\uFEFF/, '')); // Strip BOM if present
     
-    return lines.slice(1).map(line => {
-      const values = [];
-      let inQuoteVal = false;
-      let currentValue = '';
-      
-      for (let i = 0; i < line.length; i++) {
-        let char = line[i];
-        if (char === '"') {
-          inQuoteVal = !inQuoteVal;
-        } else if (char === ',' && !inQuoteVal) {
-          values.push(currentValue.trim().replace(/^"|"$/g, ''));
-          currentValue = '';
-        } else {
-          currentValue += char;
-        }
-      }
-      values.push(currentValue.trim().replace(/^"|"$/g, ''));
-
+    return rows.slice(1).map(row => {
       let obj = {};
-      headers.forEach((h, i) => obj[h] = values[i] || '');
+      headers.forEach((header, index) => {
+        obj[header] = (row[index] !== undefined) ? row[index].trim().replace(/^"|"$/g, '') : '';
+      });
       return obj;
     });
   }
