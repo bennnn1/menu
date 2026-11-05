@@ -108,17 +108,16 @@
     .meal-cell .item { padding: 0.05em 0; }
 
     .section-label {
-      font-size: calc(var(--fs) * 0.7);
+      font-size: var(--fs);
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #34495e;
-      border-bottom: 1px solid #c8ccd0;
-      margin: 0.45em 0.6em 0.15em;
-      padding-bottom: 0.05em;
+      text-decoration: underline;
+      text-underline-offset: 0.12em;
+      color: #111111;
+      margin-top: 0.55em;
       line-height: 1.2;
     }
     .meal-cell .section-label:first-child { margin-top: 0; }
+    .section-gap { height: 0.9em; }
 
     .heart-symbol {
       color: #e74c3c;
@@ -219,16 +218,15 @@
   // still shrinks it further automatically if a week doesn't fit.
   const MAX_FONT_VH = 1.5;
 
-  // The CSV columns that get a heading inside each Lunch/Dinner cell, in order.
-  // [CSV column name, heading shown on screen]
-  const SECTIONS = [
-    ['appetizer', 'Appetizer'],
-    ['entree',    'Entree'],
-    ['sides',     'Sides'],
-    ['dessert',   'Dessert']
-  ];
-  // Breakfast shows its items with no headings.
-  const MEALS_WITH_HEADINGS = ['Lunch', 'Dinner'];
+  // ---- Menu rules (match the home office layout) ----
+  // Lines that always appear at the top of Breakfast, e.g. ['Assorted Bread & Fruit']
+  const ALWAYS_BREAKFAST = [];
+  // Added under the soup when a day has no appetizer of its own
+  const TOSSED_SALAD = 'Tossed Salad';
+  // Heading above the dessert ('' = none, just a gap, like the home office menu)
+  const DESSERT_HEADING = '';
+  // Days whose dessert is shown with Lunch instead of Dinner
+  const DESSERT_WITH_LUNCH_DAYS = ['Sun'];
 
   const DAYS = [
     ['Sun', 'Sunday'], ['Mon', 'Monday'], ['Tue', 'Tuesday'], ['Wed', 'Wednesday'],
@@ -311,12 +309,7 @@
     row.push(field);
     if (row.some(v => v.trim() !== '')) rows.push(row);
 
-    const headers = rows[0].map(h => h.trim().toLowerCase());
-    return rows.slice(1).map(r => {
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = (r[i] || '').trim() === '' ? '' : r[i]);
-      return obj;
-    });
+    return rows;
   }
 
   // ---------------- FILL THE CELLS ----------------
@@ -337,6 +330,75 @@
     return div;
   }
 
+  // Turns the spreadsheet grid (days across the top, dish types down the side)
+  // into menu[week][day][dishType]
+  function buildMenu(rows) {
+    const header = rows[0] || [];
+    const labelRow = {};
+    rows.slice(1).forEach(r => {
+      const name = (r[0] || '').trim().toLowerCase();
+      if (name && !(name in labelRow)) labelRow[name] = r;   // first block of rows wins
+    });
+    const menu = {};
+    header.forEach((h, c) => {
+      const m = /week\s*(\d+)\s+([a-z]+)/i.exec(h || '');
+      if (!m) return;
+      const day = DAYS.find(([k]) => k.toLowerCase() === m[2].slice(0, 3).toLowerCase());
+      if (!day) return;
+      const w = parseInt(m[1], 10);
+      menu[w] = menu[w] || {};
+      const d = (menu[w][day[0]] = {});
+      Object.keys(labelRow).forEach(name => { d[name] = (labelRow[name][c] || '').trim(); });
+    });
+    return menu;
+  }
+
+  // lines(d, 'LunEntree1', 'SpSalad', ...) -> the non-empty items, in that order
+  const lines = (d, ...names) => names
+    .flatMap(n => (d[n.toLowerCase()] || '').split(/\r?\n/))
+    .map(x => x.trim())
+    .filter(x => x !== '');
+
+  function appetizers(d, prefix) {
+    const own = lines(d, prefix + 'App');
+    const soup = lines(d, 'SpSoup');
+    if (prefix === 'Lun') return own.length ? own : [...soup, TOSSED_SALAD];
+    return own.length ? [...own, ...soup] : [...soup, TOSSED_SALAD];
+  }
+
+  function sectionsFor(d, dayKey, meal) {
+    if (!Object.values(d).some(v => v)) return [];          // nothing entered for this day
+    if (meal === 'Breakfast') {
+      return [['', [...ALWAYS_BREAKFAST, ...lines(d, 'Oatmeal', 'Egg', 'Bfast1', 'Bfast2')]]];
+    }
+    const p = meal === 'Lunch' ? 'Lun' : 'Din';
+    const sections = [
+      ['Appetizer', appetizers(d, p)],
+      ['Entr\u00e9e', lines(d, p + 'Entree1', p + 'Entree2', p + 'Entree3', 'SpSalad', 'SpSand')],
+      ['Sides', lines(d, p + 'Side1', p + 'Side2', p + 'Side3', 'SpVeg')]
+    ];
+    const dessertMeal = DESSERT_WITH_LUNCH_DAYS.includes(dayKey) ? 'Lunch' : 'Dinner';
+    if (meal === dessertMeal) sections.push([DESSERT_HEADING, lines(d, 'Dessert')]);
+    return sections;
+  }
+
+  function fillCell(cell, sections) {
+    sections.forEach(([label, items], i) => {
+      if (items.length === 0) return;
+      if (label) {
+        const heading = document.createElement('div');
+        heading.className = 'section-label';
+        heading.textContent = label;
+        cell.appendChild(heading);
+      } else if (i > 0 && cell.children.length > 0) {
+        const gap = document.createElement('div');
+        gap.className = 'section-gap';
+        cell.appendChild(gap);
+      }
+      items.forEach(line => cell.appendChild(renderItem(line)));
+    });
+  }
+
   async function loadMenu(week, label) {
     // clear all cells first so nothing stale remains
     document.querySelectorAll('.meal-cell').forEach(c => c.innerHTML = '');
@@ -344,39 +406,14 @@
     try {
       const response = await fetch('menu.csv?t=' + Date.now(), { cache: 'no-store' });
       if (!response.ok) throw new Error('HTTP ' + response.status);
-      const items = parseCSV(await response.text());
+      const menu = buildMenu(parseCSV(await response.text()));
+      const weekData = menu[week] || {};
 
-      const lines = text => (text || '').split(/\r?\n/).map(x => x.trim()).filter(x => x !== '');
-
-      items.filter(r => parseInt(r.week, 10) === week).forEach(r => {
-        const meal = (r.meal || '').trim();
-        const cell = document.getElementById(`cell-${(r.day || '').trim()}-${meal}`);
-        if (!cell) return;
-
-        if (r.holidaygif && r.holidaygif.trim()) {
-          const img = document.createElement('img');
-          img.src = r.holidaygif.trim();
-          img.className = 'holiday-gif';
-          img.alt = '';
-          img.onerror = () => img.remove();
-          cell.appendChild(img);
-        }
-
-        // Old-style "Item" column (no headings) still works, e.g. for Breakfast
-        lines(r.item).forEach(line => cell.appendChild(renderItem(line)));
-
-        // New-style section columns
-        const showHeadings = MEALS_WITH_HEADINGS.includes(meal);
-        SECTIONS.forEach(([col, label]) => {
-          const sectionLines = lines(r[col] || (col === 'entree' ? r['entr\u00e9e'] : ''));
-          if (sectionLines.length === 0) return;
-          if (showHeadings) {
-            const heading = document.createElement('div');
-            heading.className = 'section-label';
-            heading.textContent = label;
-            cell.appendChild(heading);
-          }
-          sectionLines.forEach(line => cell.appendChild(renderItem(line)));
+      DAYS.forEach(([dayKey]) => {
+        const d = weekData[dayKey] || {};
+        MEALS.forEach(meal => {
+          const cell = document.getElementById(`cell-${dayKey}-${meal}`);
+          fillCell(cell, sectionsFor(d, dayKey, meal));
         });
       });
     } catch (err) {
