@@ -106,6 +106,19 @@
     }
     .meal-cell .item { padding: 0.05em 0; }
 
+    .section-label {
+      font-size: calc(var(--fs) * 0.7);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #34495e;
+      border-bottom: 1px solid #c8ccd0;
+      margin: 0.45em 0.6em 0.15em;
+      padding-bottom: 0.05em;
+      line-height: 1.2;
+    }
+    .meal-cell .section-label:first-child { margin-top: 0; }
+
     .heart-symbol {
       color: #e74c3c;
       font-weight: bold;
@@ -200,6 +213,22 @@
   const CYCLE_ANCHOR = '2026-01-04'; // a Sunday that is the start of Week 1
   const CYCLE_LENGTH = 4;    // number of weeks in the rotation
 
+  // Largest the menu text is allowed to be, as a % of screen height.
+  // Lower = smaller text (1.7 is about 18px on a 1080p monitor). The page
+  // still shrinks it further automatically if a week doesn't fit.
+  const MAX_FONT_VH = 1.7;
+
+  // The CSV columns that get a heading inside each Lunch/Dinner cell, in order.
+  // [CSV column name, heading shown on screen]
+  const SECTIONS = [
+    ['appetizer', 'Appetizer'],
+    ['entree',    'Entree'],
+    ['sides',     'Sides'],
+    ['dessert',   'Dessert']
+  ];
+  // Breakfast shows its items with no headings.
+  const MEALS_WITH_HEADINGS = ['Lunch', 'Dinner'];
+
   const DAYS = [
     ['Sun', 'Sunday'], ['Mon', 'Monday'], ['Tue', 'Tuesday'], ['Wed', 'Wednesday'],
     ['Thu', 'Thursday'], ['Fri', 'Friday'], ['Sat', 'Saturday']
@@ -281,7 +310,7 @@
     row.push(field);
     if (row.some(v => v.trim() !== '')) rows.push(row);
 
-    const headers = rows[0].map(h => h.trim());
+    const headers = rows[0].map(h => h.trim().toLowerCase());
     return rows.slice(1).map(r => {
       const obj = {};
       headers.forEach((h, i) => obj[h] = (r[i] || '').trim() === '' ? '' : r[i]);
@@ -316,23 +345,38 @@
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const items = parseCSV(await response.text());
 
-      items.filter(r => parseInt(r.Week, 10) === week).forEach(r => {
-        const cell = document.getElementById(`cell-${r.Day.trim()}-${r.Meal.trim()}`);
+      const lines = text => (text || '').split(/\r?\n/).map(x => x.trim()).filter(x => x !== '');
+
+      items.filter(r => parseInt(r.week, 10) === week).forEach(r => {
+        const meal = (r.meal || '').trim();
+        const cell = document.getElementById(`cell-${(r.day || '').trim()}-${meal}`);
         if (!cell) return;
 
-        if (r.HolidayGif && r.HolidayGif.trim()) {
+        if (r.holidaygif && r.holidaygif.trim()) {
           const img = document.createElement('img');
-          img.src = r.HolidayGif.trim();
+          img.src = r.holidaygif.trim();
           img.className = 'holiday-gif';
           img.alt = '';
           img.onerror = () => img.remove();
           cell.appendChild(img);
         }
 
-        r.Item.split(/\r?\n/)
-          .map(s => s.trim())
-          .filter(s => s !== '')
-          .forEach(line => cell.appendChild(renderItem(line)));
+        // Old-style "Item" column (no headings) still works, e.g. for Breakfast
+        lines(r.item).forEach(line => cell.appendChild(renderItem(line)));
+
+        // New-style section columns
+        const showHeadings = MEALS_WITH_HEADINGS.includes(meal);
+        SECTIONS.forEach(([col, label]) => {
+          const sectionLines = lines(r[col] || (col === 'entree' ? r['entr\u00e9e'] : ''));
+          if (sectionLines.length === 0) return;
+          if (showHeadings) {
+            const heading = document.createElement('div');
+            heading.className = 'section-label';
+            heading.textContent = label;
+            cell.appendChild(heading);
+          }
+          sectionLines.forEach(line => cell.appendChild(renderItem(line)));
+        });
       });
     } catch (err) {
       console.error('Error loading menu.csv:', err);
@@ -362,7 +406,7 @@
       - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
       - header.offsetHeight - parseFloat(getComputedStyle(header).marginBottom) - 6;
 
-    let size = Math.min(34, window.innerHeight * 0.034);
+    let size = window.innerHeight * MAX_FONT_VH / 100;
     table.style.flex = '0 0 auto';
     table.style.height = 'auto';
     while (size > 10) {
