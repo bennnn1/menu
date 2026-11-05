@@ -96,8 +96,9 @@
 
     /* MENU CELLS: items centered, one per line */
     .meal-cell {
+      font-family: 'Segoe UI Semilight', 'Segoe UI', Arial, sans-serif;
       font-size: var(--fs);
-      font-weight: 500;
+      font-weight: 400;
       line-height: 1.2;
       color: #111111;
       text-align: center;
@@ -210,13 +211,13 @@
   const MENU_SECONDS = 45;   // current week on screen
   const NEXT_SECONDS = 15;   // following week on screen
   const NOTE_SECONDS = 15;   // note.png on screen
-  const CYCLE_ANCHOR = '2026-01-04'; // a Sunday that is the start of Week 1
+  const CYCLE_ANCHOR = '2026-10-18'; // a Sunday that is the start of a Week 1 (Week 3 starts Nov 1, Week 4 starts Nov 8)
   const CYCLE_LENGTH = 4;    // number of weeks in the rotation
 
   // Largest the menu text is allowed to be, as a % of screen height.
-  // Lower = smaller text (1.7 is about 18px on a 1080p monitor). The page
+  // Lower = smaller text (1.5 is about 16px on a 1080p monitor). The page
   // still shrinks it further automatically if a week doesn't fit.
-  const MAX_FONT_VH = 1.7;
+  const MAX_FONT_VH = 1.5;
 
   // The CSV columns that get a heading inside each Lunch/Dinner cell, in order.
   // [CSV column name, heading shown on screen]
