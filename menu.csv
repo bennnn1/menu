@@ -2,7 +2,7 @@
 1,Sun,Breakfast,"Oatmeal 
 Scrambled Eggs ",,,,,
 1,Sun,Lunch,,Cole Slaw ,"Crab Cake ❤
-Apple Butter Pork Tenderloin 
+Beef Stew 
 Turkey & Swiss Sandwich ❤
 Crispy Oriental Chicken Salad ","Roasted Red Potatoes 
 Mashed Potatoes 
@@ -24,7 +24,7 @@ Herb Baked Chicken ❤","Macaroni Salad
 Green Beans 
 Mashed Sweet Potatoes ",,
 1,Mon,Dinner,,"Spinach & Egg Salad 
-Cauliflower Cheese Soup ","Beef Stew 
+Cauliflower Cheese Soup ","Apple Butter Pork Tenderloin 
 Flounder Florentine ❤
 Chicken Salad Sandwich ❤
 Turkey Chef Salad 
@@ -36,9 +36,9 @@ Green Beans ",Cherry Pie,
 Scrambled Eggs 
 Strawberry Pancakes 
 Breakfast Sausage ",,,,,
-1,Tue,Lunch,,Minestrone Soup ,"Sloppy Joe 
+1,Tue,Lunch,,Minestrone Soup ,"Ham & Pepperoni Stromboli 
 Italian Sub 
-Steak Salad ❤
+Salmon Salad ❤
 Herb Baked Chicken ❤","Sidewinder Fries 
 Buttered Carrots 
 Mashed Potatoes ",,
@@ -46,7 +46,7 @@ Mashed Potatoes ",,
 Minestrone Soup ","Chicken Parmesan over Pasta ❤
 Swedish Meatballs over Pasta 
 Italian Sub 
-Steak Salad ❤
+Salmon Salad ❤
 Herb Baked Fish ❤","Garlic Herb Rotini 
 Mashed Potatoes 
 Asparagus in Brown Butter 
@@ -54,17 +54,17 @@ Buttered Carrots ",Lemon Blueberry Cake,
 1,Wed,Breakfast,"Blueberry Baked Oatmeal 
 Scrambled Eggs 
 Breakfast Potatoes ",,,,,
-1,Wed,Lunch,,Loaded Potato Soup ,"Ham & Pepperoni Stromboli 
+1,Wed,Lunch,,Loaded Potato Soup ,"Sloppy Joe 
 Seafood Salad Platter ❤
-Harvest Chicken Salad 
+Harvest Salad w/Chicken ❤
 Herb Baked Fish ❤","Corn Nuggets 
 Green Peas 
 Mashed Sweet Potatoes ",,
 1,Wed,Dinner,,"Red Beet Eggs 
 Loaded Potato Soup ","Meatloaf w/Gravy 
-Honey Mustard Glazed Ham 
+Fried Flounder 
 Seafood Salad Platter ❤
-Harvest Chicken Salad 
+Harvest Salad w/Chicken ❤
 Herb Baked Chicken ❤","Garlic Mashed Potatoes 
 Mashed Sweet Potatoes 
 Buttered Corn 
@@ -76,8 +76,7 @@ Bacon ",,,,,
 1,Thu,Lunch,,Beef Vegetable Soup ,"Hot Turkey Sandwich w/Gravy 
 Chili Dog w/Cheese 
 Berry Almond Chicken Salad ❤
-Herb Baked Fish ❤","Mashed Potatoes 
-Steamed Cauliflower 
+Herb Baked Fish ❤","Steamed Cauliflower 
 Mashed Potatoes ",,
 1,Thu,Dinner,,"Creamy Cucumber Slaw 
 Beef Vegetable Soup ","BBQ Baked Pork Ribs 
@@ -175,7 +174,7 @@ Scrambled Eggs
 Breakfast Potatoes ",,,,,
 2,Wed,Lunch,,Beef Rice Soup ,"Reuben Sandwich 
 Seafood Salad on Croissant ❤
-Harvest Chicken Salad 
+Harvest Salad w/Chicken ❤
 Herb Baked Chicken ❤","Potato Salad 
 Green Peas 
 Mashed Potatoes ",,
@@ -183,7 +182,7 @@ Mashed Potatoes ",,
 Beef Rice Soup ","Pork & Sauerkraut ❤
 Baked Haddock in Lemon Butter ❤
 Seafood Salad on Croissant ❤
-Harvest Chicken Salad ","Mashed Potatoes 
+Harvest Salad w/Chicken ❤","Mashed Potatoes 
 Vegetable Medley 
 Green Peas ",Peanut Butter Pie,
 2,Thu,Breakfast,"Oatmeal 
@@ -326,7 +325,7 @@ Sausage Patty ",,,,,
 3,Fri,Lunch,,Cream of Potato Soup ,"Broccoli Cheese Calzone 
 Grilled Chicken Sandwich ❤
 BLT Salad ","Garden Pasta Salad 
-Roasted Squash Blend 
+Asparagus in Brown Butter 
 Mashed Sweet Potatoes ",,
 3,Fri,Dinner,,"Red Pepper Hummus Plate 
 Cream of Potato Soup ","Chicken Cordon Bleu 
@@ -335,7 +334,7 @@ Grilled Chicken Sandwich ❤
 BLT Salad ","Baked Potato 
 Mashed Sweet Potatoes 
 Buttered Beets 
-Roasted Squash Blend ",Chocolate Peanut Butter Cake,
+Asparagus in Brown Butter ",Chocolate Peanut Butter Cake,
 3,Sat,Breakfast,"Oatmeal 
 Scrambled Eggs 
 Scrapple ",,,,,
